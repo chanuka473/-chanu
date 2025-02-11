@@ -26,8 +26,8 @@ jobs:
      with:
        node-vesion: ${{ matrix_node-version}}
  
-   -name: install dependencies
-    run:npm install
+    -name: install dependencies
+     run:npm install
 
-   -name: start application
-    run: npm start
+    -name: start application
+     run: npm start
