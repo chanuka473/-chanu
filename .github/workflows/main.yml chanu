@@ -1,0 +1,46 @@
+const express = require('express');
+   const { Octokit } = require("@octokit/rest");
+   const twilio = require('twilio');
+   require('dotenv').config();
+
+   const app = express();
+   const port = 3000;
+   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+   const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+   // Parse incoming WhatsApp messages
+   app.use(express.urlencoded({ extended: true }));
+
+   app.post('/webhook', async (req, res) => {
+     const userMessage = req.body.Body;
+     const userNumber = req.body.From;
+
+     try {
+       // Command: "create issue: <title>, <description>"
+       if (userMessage.startsWith("create issue:")) {
+         const [title, description] = userMessage.split(":")[1].split(",");
+         await octokit.issues.create({
+           owner: "YOUR_GITHUB_USERNAME",
+           repo: "YOUR_REPO_NAME",
+           title: title.trim(),
+           body: description.trim()
+         });
+         await client.messages.create({
+           body: "✅ GitHub Issue Created Successfully!",
+           from: 'whatsapp:+14155238886',
+           to: userNumber
+         });
+       }
+     } catch (error) {
+       await client.messages.create({
+         body: "❌ Error: " + error.message,
+         from: 'whatsapp:+14155238886',
+         to: userNumber
+       });
+     }
+     res.status(200).end();
+   });
+
+   app.listen(port, () => {
+     console.log(`Server running on port ${port}`);
+   });
